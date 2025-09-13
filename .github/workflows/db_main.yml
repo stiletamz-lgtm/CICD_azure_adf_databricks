@@ -1,0 +1,49 @@
+name: Deploy to Databricks
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - db/** 
+
+jobs:
+  
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: Development
+    env:
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy notebooks to Dev
+        run: |
+          databricks workspace import-dir ./db /Shared --overwrite
+
+
+  
+  deploy-prod:
+    needs: deploy-dev   
+    runs-on: ubuntu-latest
+    environment: Production
+    env:
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST_PR }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PR }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy notebooks to Prod
+        run: |
+          databricks workspace import-dir ./db /Shared --overwrite
